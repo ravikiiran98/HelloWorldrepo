@@ -3,28 +3,11 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        stage('Build') {
             steps {
-                checkout scm
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Compile') {
-            steps {
-                sh 'mvn clean compile'
-            }
-        }
-
-        stage('Package') {
-            steps {
-                sh 'mvn package -DskipTests'
-            }
-        }
-
-        stage('Run Application') {
-            steps {
-                sh 'java -cp target/classes HelloWorld'
-            }
-        }
     }
 }
