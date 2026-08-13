@@ -9,13 +9,14 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+       stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar'
+                    sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.4.0.6343:sonar'
                 }
             }
         }
+ 
 
         stage('Docker Build') {
             steps {
