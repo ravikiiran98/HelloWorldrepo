@@ -5,13 +5,17 @@ pipeline {
         IMAGE_NAME = "ravikiiran/hello-world"
         IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDENTIALS = "dockerhub-creds"
+
+        KIND_CLUSTER = "myapp-cluster"
     }
 
     stages {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh '''
+                    mvn clean package -DskipTests
+                '''
             }
         }
 
@@ -66,6 +70,44 @@ pipeline {
                         docker logout
                     '''
                 }
+            }
+        }
+
+        stage('Deploy to Kind') {
+            steps {
+                sh '''
+                    kubectl config use-context kind-${KIND_CLUSTER}
+
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
+
+                    kubectl set image deployment/hello-world \
+                        hello-world=${IMAGE_NAME}:${IMAGE_TAG}
+
+                    kubectl rollout status deployment/hello-world \
+                        --timeout=120s
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                    echo "===== PODS ====="
+                    kubectl get pods -o wide
+
+                    echo "===== DEPLOYMENT ====="
+                    kubectl get deployment hello-world
+
+                    echo "===== SERVICE ====="
+                    kubectl get service hello-world
+
+                    echo "===== IMAGE ====="
+                    kubectl get deployment hello-world \
+                        -o jsonpath='{.spec.template.spec.containers[0].image}'
+
+                    echo
+                '''
             }
         }
     }
